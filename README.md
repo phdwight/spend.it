@@ -54,7 +54,7 @@ formula per period in one map).
 docker compose up -d --build
 ```
 
-Then open http://localhost:8000.
+Then open http://localhost:61700.
 
 The SQLite file lives in the named volume `spendit-data` (mounted at `/data`
 inside the container), so your records survive container rebuilds.
@@ -109,7 +109,7 @@ Then browse to `http://localhost:9000`.
 
 | Variable    | Purpose                                       | Default   |
 | ----------- | --------------------------------------------- | --------- |
-| `APP_PORT`  | Port the app listens on (host **and** container) | `8000` |
+| `APP_PORT`  | Port the app listens on (host **and** container) | `61700` |
 | `HOST_BIND` | Host interface to bind on                     | `0.0.0.0` |
 
 For a one-off run without editing `.env`:
@@ -141,7 +141,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-Open http://127.0.0.1:8000. The SQLite file is created at `data/spendit.db`.
+Open http://127.0.0.1:61700. The SQLite file is created at `data/spendit.db`.
 
 ## Tests and lint
 
@@ -166,7 +166,7 @@ ignored). Both commands must be clean before opening a PR.
 | GET    | `/api/reports/summary`        | Totals by category + by period (`period=daily\|monthly\|yearly`) |
 | GET    | `/api/health`                 | Health check                           |
 
-Interactive docs: http://localhost:8000/docs
+Interactive docs: http://localhost:61700/docs
 
 ## Install as a PWA
 

@@ -3,7 +3,7 @@
 # Quick start:
 #   cp .env.example .env        # then edit values if you like
 #   docker compose up -d
-#   open http://localhost:8000
+#   open http://localhost:61700
 #
 # Update to a new build:
 #   docker compose pull || true
@@ -33,11 +33,11 @@ services:
       SPENDIT_DB_PATH: /data/spendit.db
       # Single source of truth: change APP_PORT in .env to retarget both the
       # host mapping below and the uvicorn listener inside the container.
-      APP_PORT: ${APP_PORT:-8000}
+      APP_PORT: ${APP_PORT:-61700}
     ports:
       # Bind to a single interface in production by setting HOST_BIND=127.0.0.1
       # in .env and putting a reverse proxy (Caddy/Traefik/Nginx) in front.
-      - "${HOST_BIND:-0.0.0.0}:${APP_PORT:-8000}:${APP_PORT:-8000}"
+      - "${HOST_BIND:-0.0.0.0}:${APP_PORT:-61700}:${APP_PORT:-61700}"
     volumes:
       - spendit-data:/data
       # Prefer a host bind mount? Comment the line above and uncomment below:

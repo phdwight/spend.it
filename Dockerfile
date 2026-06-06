@@ -6,7 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1 \
     SPENDIT_DB_PATH=/data/spendit.db \
-    APP_PORT=8000
+    APP_PORT=61700
 
 WORKDIR /app
 
@@ -24,8 +24,8 @@ RUN useradd --create-home --uid 1000 spendit \
     && chown -R spendit:spendit /app /data
 USER spendit
 
-# Documentation only — the actual listening port is APP_PORT (default 8000).
-EXPOSE 8000
+# Documentation only — the actual listening port is APP_PORT (default 61700).
+EXPOSE 61700
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD python -c "import os,sys,urllib.request;\

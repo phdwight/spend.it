@@ -227,8 +227,8 @@ single client-side store.
   CSS to render on Safari and Chromium. Keep them in lockstep.
 - **No Alembic.** Renaming or dropping a column requires a manual SQLite
   table-rebuild dance — don't pretend the lightweight helper covers that.
-- **Compose port literals.** Don't reintroduce a hard-coded `8000:8000` line;
-  use `${APP_PORT:-8000}` on both sides.
+- **Compose port literals.** Don't reintroduce a hard-coded `61700:61700` line;
+  use `${APP_PORT:-61700}` on both sides.
 
 ## 4. How to add functionality (engineering playbook)
 
@@ -366,7 +366,7 @@ a project this size.
 - [ ] If `SHELL` files changed: `CACHE` bumped in [app/static/sw.js](app/static/sw.js).
 - [ ] If port handling changed: `APP_PORT` flow still works
       (`APP_PORT=9000 docker compose config` shows `target: 9000` *and*
-      `published: "9000"`).
+      `published: "9000"`; default is `61700`).
 - [ ] No new runtime dependency without justification.
 - [ ] [README.md](README.md) and this file updated if behavior or contracts
       changed.
