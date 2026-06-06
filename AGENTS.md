@@ -358,6 +358,8 @@ a project this size.
 ### Pre-merge checklist
 
 - [ ] `python -m pytest -q` is green (52+ tests).
+- [ ] `python -m flake8 app tests` is clean (config in [.flake8](.flake8),
+      `max-line-length = 100`).
 - [ ] New routes have at least one happy-path and one validation-error test.
 - [ ] New repository functions have a unit test with the `db_session` fixture.
 - [ ] If models changed: model + migration branch + test all in the same commit.
@@ -387,5 +389,6 @@ Confirm the baseline:
 ```bash
 python -m pip install -r requirements.txt -r requirements-dev.txt
 python -m pytest -q
+python -m flake8 app tests
 docker compose config           # validates compose without starting anything
 ```

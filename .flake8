@@ -1,0 +1,25 @@
+[flake8]
+# Match the codebase's existing style; 100 covers all current lines and is a
+# common modern default. Keep this in sync with any future formatter choice.
+max-line-length = 100
+
+# E203: whitespace before ':' — conflicts with PEP 8 slice formatting.
+# W503: line break before binary operator — PEP 8 now prefers this.
+extend-ignore = E203, W503
+
+exclude =
+    .git,
+    .venv,
+    venv,
+    __pycache__,
+    .pytest_cache,
+    data,
+    build,
+    dist,
+
+per-file-ignores =
+    # conftest must set env vars before importing the app, so the imports
+    # below the env mutation are intentional.
+    tests/conftest.py: E402
+    # database.py imports models inside init_db() purely for side effects.
+    app/database.py: F401

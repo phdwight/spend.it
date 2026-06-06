@@ -59,6 +59,39 @@ Then open http://localhost:8000.
 The SQLite file lives in the named volume `spendit-data` (mounted at `/data`
 inside the container), so your records survive container rebuilds.
 
+### Pull the prebuilt image (recommended for deploys)
+
+Every push to `main` and every `v*.*.*` tag publishes a multi-arch
+(`linux/amd64`, `linux/arm64`) image to GitHub Container Registry via
+[`.github/workflows/docker.yml`](.github/workflows/docker.yml):
+
+```
+ghcr.io/<owner>/spend.it:latest
+ghcr.io/<owner>/spend.it:<semver>     # for tagged releases
+ghcr.io/<owner>/spend.it:sha-<short>  # immutable per commit
+```
+
+The compose file pulls that image by default. To deploy on another machine:
+
+```bash
+git clone <repo> && cd spend.it
+cp .env.example .env                  # optional — defaults are sane
+docker compose pull                   # grab the latest image
+docker compose up -d
+```
+
+To pin to a specific version, set `IMAGE` in `.env`:
+
+```bash
+IMAGE=ghcr.io/<owner>/spend.it:v1.2.3
+```
+
+If the image is private, log in once on the host:
+
+```bash
+echo "$GHCR_TOKEN" | docker login ghcr.io -u <github-user> --password-stdin
+```
+
 ### Change the port
 
 The port is controlled by **one variable** in `.env` — change it there and
@@ -109,6 +142,19 @@ uvicorn app.main:app --reload
 ```
 
 Open http://127.0.0.1:8000. The SQLite file is created at `data/spendit.db`.
+
+## Tests and lint
+
+Install dev dependencies, then run pytest and flake8:
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest -q
+python -m flake8 app tests
+```
+
+flake8 is configured in [`.flake8`](.flake8) (max line length `100`, E203/W503
+ignored). Both commands must be clean before opening a PR.
 
 ## API
 

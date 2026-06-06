@@ -16,10 +16,17 @@
 
 services:
   spendit:
+    # By default, pull the prebuilt image published by GitHub Actions
+    # (.github/workflows/docker.yml). Override the registry/repo/tag with the
+    # IMAGE env var, e.g.:
+    #   IMAGE=ghcr.io/your-org/spend.it:v1.2.3 docker compose up -d
+    image: ${IMAGE:-ghcr.io/phdwight/spend.it:latest}
+    # `build:` is kept for local development. With both keys set, Compose pulls
+    # the image when it exists and only builds if it doesn't (or when you run
+    # `docker compose build` / `docker compose up --build`).
     build:
       context: .
       dockerfile: Dockerfile
-    image: spendit:latest
     container_name: spendit
     restart: unless-stopped
     environment:
