@@ -1,15 +1,56 @@
+# spend.it — production-friendly compose file.
+#
+# Quick start:
+#   cp .env.example .env        # then edit values if you like
+#   docker compose up -d
+#   open http://localhost:8000
+#
+# Update to a new build:
+#   docker compose pull || true
+#   docker compose build --pull
+#   docker compose up -d
+#
+# Backups: the SQLite DB lives in the named volume `spendit-data`. To copy it
+# out: `docker compose cp spendit:/data/spendit.db ./spendit.db`. Or swap the
+# named volume below for a host bind mount (see commented block).
+
 services:
   spendit:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: spendit:latest
     container_name: spendit
     restart: unless-stopped
-    ports:
-      - "8000:8000"
-    volumes:
-      - spendit-data:/data
     environment:
       SPENDIT_DB_PATH: /data/spendit.db
+      # Single source of truth: change APP_PORT in .env to retarget both the
+      # host mapping below and the uvicorn listener inside the container.
+      APP_PORT: ${APP_PORT:-8000}
+    ports:
+      # Bind to a single interface in production by setting HOST_BIND=127.0.0.1
+      # in .env and putting a reverse proxy (Caddy/Traefik/Nginx) in front.
+      - "${HOST_BIND:-0.0.0.0}:${APP_PORT:-8000}:${APP_PORT:-8000}"
+    volumes:
+      - spendit-data:/data
+      # Prefer a host bind mount? Comment the line above and uncomment below:
+      # - ./data:/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - |
+          python -c "import os,sys,urllib.request; \
+          r=urllib.request.urlopen(f'http://127.0.0.1:{os.environ[\"APP_PORT\"]}/api/health',timeout=3); \
+          sys.exit(0 if r.status==200 else 1)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   spendit-data:

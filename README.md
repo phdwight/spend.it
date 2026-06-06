@@ -59,6 +59,35 @@ Then open http://localhost:8000.
 The SQLite file lives in the named volume `spendit-data` (mounted at `/data`
 inside the container), so your records survive container rebuilds.
 
+### Change the port
+
+The port is controlled by **one variable** in `.env` — change it there and
+both the host mapping *and* the container's listener follow. Nothing else
+needs to be edited.
+
+```bash
+cp .env.example .env          # one-time setup
+# edit .env and set:
+APP_PORT=9000
+docker compose up -d
+```
+
+Then browse to `http://localhost:9000`.
+
+| Variable    | Purpose                                       | Default   |
+| ----------- | --------------------------------------------- | --------- |
+| `APP_PORT`  | Port the app listens on (host **and** container) | `8000` |
+| `HOST_BIND` | Host interface to bind on                     | `0.0.0.0` |
+
+For a one-off run without editing `.env`:
+
+```bash
+APP_PORT=9000 docker compose up -d
+```
+
+To expose the app only to the local machine (e.g. when fronting it with a
+reverse proxy), set `HOST_BIND=127.0.0.1` in `.env`.
+
 To stop:
 
 ```bash
