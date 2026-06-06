@@ -1,0 +1,15 @@
+services:
+  spendit:
+    build: .
+    image: spendit:latest
+    container_name: spendit
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - spendit-data:/data
+    environment:
+      SPENDIT_DB_PATH: /data/spendit.db
+
+volumes:
+  spendit-data:

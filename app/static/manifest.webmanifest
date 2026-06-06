@@ -1,0 +1,19 @@
+{
+  "name": "spend.it — personal spending tracker",
+  "short_name": "spend.it",
+  "description": "Track and visualize your personal spending. Daily, monthly, yearly reports.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/static/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
