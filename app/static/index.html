@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#ffffff" />
   <title>spend.it — personal spending tracker</title>
   <link rel="manifest" href="/static/manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="/static/icons/icon.svg" />
@@ -13,14 +13,129 @@
   <script defer src="/static/app.js"></script>
 </head>
 <body>
-  <header class="app-header">
-    <h1>spend<span class="dot">.</span>it</h1>
-    <p class="tagline">Track every peso. See where it goes.</p>
-  </header>
+  <div class="app">
+    <header class="topbar">
+      <div class="greet">
+        <span class="greet__hello">Good morning,</span>
+        <span class="greet__name">Dwight Ian</span>
+      </div>
+      <button class="icon-btn" id="mail-btn" type="button" aria-label="Messages">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="14" rx="2"></rect>
+          <path d="m3 7 9 6 9-6"></path>
+        </svg>
+      </button>
+    </header>
 
-  <main>
-    <section class="card">
-      <h2>Add spending</h2>
+    <nav class="tabs" aria-label="Sections">
+      <button class="tabs__eye" id="toggle-amounts" type="button" aria-label="Hide amounts" aria-pressed="false">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+      </button>
+      <span class="tabs__divider" aria-hidden="true"></span>
+      <div class="tabs__scroll" role="tablist">
+        <button class="tab is-active" data-view="deposits" role="tab" aria-selected="true">Transactions</button>
+        <button class="tab" data-view="reports" role="tab" aria-selected="false">Reports</button>
+      </div>
+    </nav>
+
+    <main>
+      <!-- Deposits view: the list of expenses, styled as account cards -->
+      <section class="view is-active" id="view-deposits">
+        <h2 class="view-title">Transactions</h2>
+        <div id="expense-list" class="account-list"></div>
+        <nav id="pagination" class="pagination" aria-label="Transactions pages" hidden>
+          <button id="page-prev" class="pagination__btn" type="button">Previous</button>
+          <span id="page-info" class="pagination__info" aria-live="polite"></span>
+          <button id="page-next" class="pagination__btn" type="button">Next</button>
+        </nav>
+        <p id="empty-state" class="empty-state" hidden>No spending yet. Tap the red button below to add your first entry.</p>
+      </section>
+
+      <!-- Reports view -->
+      <section class="view" id="view-reports" hidden>
+        <h2 class="view-title">Reports</h2>
+
+        <div class="period-toggle" role="tablist" aria-label="Report period">
+          <button type="button" class="chip is-active" data-period="daily" role="tab">Daily</button>
+          <button type="button" class="chip" data-period="monthly" role="tab">Monthly</button>
+          <button type="button" class="chip" data-period="yearly" role="tab">Yearly</button>
+        </div>
+
+        <div class="totals">
+          <div class="totals__item">
+            <span class="totals__label" id="grand-total-label">Today's total</span>
+            <span id="grand-total" class="totals__value maskable">—</span>
+          </div>
+          <div class="totals__item">
+            <span class="totals__label">Top category</span>
+            <span id="top-category" class="totals__value">—</span>
+          </div>
+          <div class="totals__item">
+            <span class="totals__label">Entries</span>
+            <span id="entries-count" class="totals__value">—</span>
+          </div>
+        </div>
+
+        <div class="charts">
+          <div class="chart-wrap">
+            <h3 id="category-title">By category — today</h3>
+            <canvas id="chart-category" aria-label="Spending by category"></canvas>
+          </div>
+          <div class="chart-wrap">
+            <h3 id="period-title">Daily totals</h3>
+            <p class="chart-hint">Tip: click a bar to drill into that period.</p>
+            <canvas id="chart-period" aria-label="Spending over time"></canvas>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottomnav" aria-label="Main">
+      <button class="navitem is-active" id="nav-accounts" type="button">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+          <path d="M3 9h18M9 9v12"></path>
+        </svg>
+        <span>Accounts</span>
+      </button>
+      <button class="navitem is-disabled" type="button" disabled aria-disabled="true" title="Coming soon">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 7h12l-3-3M17 17H5l3 3"></path>
+        </svg>
+        <span>Move money</span>
+      </button>
+      <button class="fab" id="add-btn" type="button" aria-label="Add spending">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 5v14M5 12h14"></path>
+        </svg>
+      </button>
+      <button class="navitem" id="nav-reports" type="button">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="8" y="8" width="12" height="12" rx="2"></rect>
+          <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"></path>
+        </svg>
+        <span>Reports</span>
+      </button>
+      <button class="navitem is-disabled" type="button" disabled aria-disabled="true" title="Coming soon">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 7h16M4 12h16M4 17h16"></path>
+        </svg>
+        <span>More</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Add spending sheet, opened by the center red button -->
+  <div class="sheet-backdrop" id="add-sheet" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+      <header class="sheet__head">
+        <h2 id="sheet-title">Add spending</h2>
+        <button class="sheet__close" id="sheet-close" type="button" aria-label="Close">✕</button>
+      </header>
+
       <form id="expense-form" class="form-grid" autocomplete="off">
         <label class="field">
           <span>Amount</span>
@@ -69,82 +184,7 @@
           <span id="form-status" class="form-status" role="status" aria-live="polite"></span>
         </div>
       </form>
-    </section>
-
-    <section class="card">
-      <header class="card-header">
-        <h2>Reports</h2>
-        <div class="period-toggle" role="tablist" aria-label="Report period">
-          <button type="button" class="chip is-active" data-period="daily" role="tab">Daily</button>
-          <button type="button" class="chip" data-period="monthly" role="tab">Monthly</button>
-          <button type="button" class="chip" data-period="yearly" role="tab">Yearly</button>
-        </div>
-      </header>
-
-      <div class="totals">
-        <div class="totals__item">
-          <span class="totals__label" id="grand-total-label">Today's total</span>
-          <span id="grand-total" class="totals__value">—</span>
-        </div>
-        <div class="totals__item">
-          <span class="totals__label">Top category</span>
-          <span id="top-category" class="totals__value">—</span>
-        </div>
-        <div class="totals__item">
-          <span class="totals__label">Entries</span>
-          <span id="entries-count" class="totals__value">—</span>
-        </div>
-      </div>
-
-      <div class="charts">
-        <div class="chart-wrap">
-          <h3 id="category-title">By category — today</h3>
-          <canvas id="chart-category" aria-label="Spending by category"></canvas>
-        </div>
-        <div class="chart-wrap">
-          <h3 id="period-title">Daily totals</h3>
-          <p class="chart-hint">Tip: click a bar to drill into that period.</p>
-          <canvas id="chart-period" aria-label="Spending over time"></canvas>
-        </div>
-      </div>
-    </section>
-
-    <section class="card card--receipt" aria-label="Recent entries">
-      <div class="receipt">
-        <header class="receipt__head">
-          <h2 class="receipt__brand">SPEND<span aria-hidden="true">·</span>IT</h2>
-          <p class="receipt__addr">123 Wallet Street &nbsp;·&nbsp; Manila, PH</p>
-          <p class="receipt__addr">TEL: 0917-SPEND-IT</p>
-          <p class="receipt__title">— RECENT TRANSACTIONS —</p>
-          <p class="receipt__meta">
-            <span id="receipt-date"></span>
-            <span>REG&nbsp;#01</span>
-          </p>
-        </header>
-
-        <hr class="receipt__rule" />
-
-        <ul id="expense-list" class="receipt__list"></ul>
-        <p id="empty-state" class="receipt__empty" hidden>* NO ITEMS YET — ADD YOUR FIRST SPENDING ABOVE *</p>
-
-        <hr class="receipt__rule" />
-
-        <div class="receipt__totals">
-          <div class="receipt__row"><span>ITEMS</span><span id="receipt-count">0</span></div>
-          <div class="receipt__row receipt__row--total"><span>SUBTOTAL</span><span id="receipt-subtotal">0.00</span></div>
-        </div>
-
-        <hr class="receipt__rule receipt__rule--double" />
-
-        <p class="receipt__thanks">★ THANK YOU FOR TRACKING ★</p>
-        <p class="receipt__barcode" aria-hidden="true">||| | |||| || | ||| | || ||||</p>
-        <p class="receipt__serial" aria-hidden="true">#SPND-0001-Y</p>
-      </div>
-    </section>
-  </main>
-
-  <footer class="app-footer">
-    <small>Built with FastAPI + SQLite. Your data stays local.</small>
-  </footer>
+    </div>
+  </div>
 </body>
 </html>

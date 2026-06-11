@@ -1,5 +1,5 @@
 /* spend.it — service worker (offline-first shell, network-first API) */
-const CACHE = "spendit-shell-v1";
+const CACHE = "spendit-shell-v7";
 const SHELL = [
   "/",
   "/static/styles.css",

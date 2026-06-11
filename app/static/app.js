@@ -30,7 +30,11 @@
     periodChart: null,
     lastSummary: null,
     selectedBucket: null,
+    listItems: [],
+    page: 1,
   };
+
+  const PAGE_SIZE = 10;
 
   // ---------- formatting ----------
   const currency = new Intl.NumberFormat(undefined, {
@@ -171,11 +175,69 @@
         $("#spent_at").value = today;
         clearPhoto();
         setStatus("Saved.", "success");
+        closeSheet();
         await refreshAll();
       } catch (err) {
         console.error(err);
         setStatus("Could not save. Try again.", "error");
       }
+    });
+  }
+
+  // ---------- navigation: tabs, add sheet, amount masking ----------
+  function showView(view) {
+    document.querySelectorAll(".view").forEach((el) => {
+      const active = el.id === `view-${view}`;
+      el.classList.toggle("is-active", active);
+      el.hidden = !active;
+    });
+    document.querySelectorAll(".tab[data-view]").forEach((btn) => {
+      const active = btn.dataset.view === view;
+      btn.classList.toggle("is-active", active);
+      btn.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    $("#nav-accounts").classList.toggle("is-active", view === "deposits");
+    $("#nav-reports").classList.toggle("is-active", view === "reports");
+  }
+
+  function initTabs() {
+    document.querySelectorAll(".tab[data-view]").forEach((btn) => {
+      btn.addEventListener("click", () => showView(btn.dataset.view));
+    });
+    $("#nav-accounts").addEventListener("click", () => showView("deposits"));
+    $("#nav-reports").addEventListener("click", () => showView("reports"));
+  }
+
+  function openSheet() {
+    $("#add-sheet").hidden = false;
+    setStatus("");
+    const amount = $("#amount");
+    if (amount) amount.focus();
+  }
+
+  function closeSheet() {
+    $("#add-sheet").hidden = true;
+  }
+
+  function initSheet() {
+    $("#add-btn").addEventListener("click", openSheet);
+    $("#sheet-close").addEventListener("click", closeSheet);
+    $("#add-sheet").addEventListener("click", (e) => {
+      if (e.target === e.currentTarget) closeSheet();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !$("#add-sheet").hidden) closeSheet();
+    });
+  }
+
+  function initEyeToggle() {
+    const btn = $("#toggle-amounts");
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      const hidden = document.body.classList.toggle("amounts-hidden");
+      btn.classList.toggle("is-off", hidden);
+      btn.setAttribute("aria-pressed", hidden ? "true" : "false");
+      btn.setAttribute("aria-label", hidden ? "Show amounts" : "Hide amounts");
     });
   }
 
@@ -242,48 +304,55 @@
     return `${day} ${dd} ${mon} ${yy}`;
   }
 
-  function setReceiptHeaderDate() {
-    const el = document.getElementById("receipt-date");
-    if (!el) return;
-    const today = new Date().toISOString().slice(0, 10);
-    el.textContent = formatReceiptDate(today);
+  async function refreshList() {
+    const items = await API.list("?limit=1000");
+    state.listItems = items;
+    const pageCount = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+    if (state.page > pageCount) state.page = pageCount;
+    if (state.page < 1) state.page = 1;
+    renderListPage();
   }
 
-  async function refreshList() {
-    const items = await API.list("?limit=50");
+  function renderListPage() {
+    const items = state.listItems;
     const list = $("#expense-list");
     list.innerHTML = "";
     $("#empty-state").hidden = items.length > 0;
 
-    let subtotal = 0;
-    for (const it of items) {
-      subtotal += Number(it.amount) || 0;
-      const li = document.createElement("li");
-      li.className = "receipt__item";
-      li.innerHTML = `
-        <div class="receipt__date"></div>
-        <div class="receipt__line">
-          <span class="receipt__name"></span>
-          <span class="receipt__dots" aria-hidden="true"></span>
-          <span class="receipt__amount"></span>
-        </div>
-        <p class="receipt__note" hidden></p>
-        <div class="receipt__photo" hidden>
+    const pageCount = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+    if (state.page > pageCount) state.page = pageCount;
+    const startIdx = (state.page - 1) * PAGE_SIZE;
+    const pageItems = items.slice(startIdx, startIdx + PAGE_SIZE);
+
+    for (const it of pageItems) {
+      const card = document.createElement("div");
+      card.className = "account-card";
+      card.innerHTML = `
+        <button class="account-card__void" type="button" aria-label="Delete this entry">✕</button>
+        <h3 class="account-card__name"></h3>
+        <p class="account-card__sub"></p>
+        <p class="account-card__note" hidden></p>
+        <div class="account-card__photo" hidden>
           <a target="_blank" rel="noopener noreferrer">
             <img alt="Attached photo" />
           </a>
         </div>
-        <button class="receipt__void" type="button" aria-label="Void this entry">[ Void ]</button>
+        <div class="account-card__amount">
+          <span class="account-card__cur">PHP</span><span class="account-card__value"></span>
+          <span class="account-card__label">Amount spent</span>
+        </div>
       `;
-      li.querySelector(".receipt__date").textContent = formatReceiptDate(it.spent_at);
-      li.querySelector(".receipt__name").textContent = it.category;
-      li.querySelector(".receipt__amount").textContent = fmt(it.amount);
-      const noteEl = li.querySelector(".receipt__note");
+      card.querySelector(".account-card__name").textContent = it.category;
+      card.querySelector(".account-card__sub").textContent = formatReceiptDate(it.spent_at);
+      card.querySelector(".account-card__value").textContent = fmt(it.amount);
+
+      const noteEl = card.querySelector(".account-card__note");
       if (it.note) {
-        noteEl.textContent = `— ${it.note}`;
+        noteEl.textContent = it.note;
         noteEl.hidden = false;
       }
-      const photoWrap = li.querySelector(".receipt__photo");
+
+      const photoWrap = card.querySelector(".account-card__photo");
       if (it.photo) {
         const link = photoWrap.querySelector("a");
         const img = photoWrap.querySelector("img");
@@ -291,8 +360,9 @@
         img.src = it.photo;
         photoWrap.hidden = false;
       }
-      li.querySelector("button").addEventListener("click", async () => {
-        if (!confirm("Void this entry?")) return;
+
+      card.querySelector(".account-card__void").addEventListener("click", async () => {
+        if (!confirm("Delete this entry?")) return;
         try {
           await API.remove(it.id);
           await refreshAll();
@@ -301,13 +371,44 @@
           setStatus("Delete failed.", "error");
         }
       });
-      list.appendChild(li);
+
+      list.appendChild(card);
     }
 
-    const countEl = document.getElementById("receipt-count");
-    const totalEl = document.getElementById("receipt-subtotal");
-    if (countEl) countEl.textContent = String(items.length);
-    if (totalEl) totalEl.textContent = fmt(subtotal);
+    renderPagination(pageCount);
+  }
+
+  function renderPagination(pageCount) {
+    const nav = $("#pagination");
+    if (!nav) return;
+    nav.hidden = pageCount <= 1;
+    $("#page-info").textContent = `Page ${state.page} of ${pageCount}`;
+    $("#page-prev").disabled = state.page <= 1;
+    $("#page-next").disabled = state.page >= pageCount;
+  }
+
+  function initPagination() {
+    const prev = $("#page-prev");
+    const next = $("#page-next");
+    if (prev) {
+      prev.addEventListener("click", () => {
+        if (state.page > 1) {
+          state.page -= 1;
+          renderListPage();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      });
+    }
+    if (next) {
+      next.addEventListener("click", () => {
+        const pageCount = Math.max(1, Math.ceil(state.listItems.length / PAGE_SIZE));
+        if (state.page < pageCount) {
+          state.page += 1;
+          renderListPage();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      });
+    }
   }
 
   // ---------- charts ----------
@@ -323,7 +424,7 @@
         datasets: [{
           data,
           backgroundColor: labels.map((_, i) => palette[i % palette.length]),
-          borderColor: "rgba(15,23,42,0.7)",
+          borderColor: "#ffffff",
           borderWidth: 2,
         }],
       },
@@ -331,7 +432,7 @@
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { position: "bottom", labels: { color: "#cbd5e1", boxWidth: 12 } },
+          legend: { position: "bottom", labels: { color: "#16313f", boxWidth: 12 } },
           tooltip: { callbacks: { label: (c) => `${c.label}: ${fmt(c.parsed)}` } },
         },
         cutout: "60%",
@@ -410,7 +511,7 @@
           renderFromState();
         },
         plugins: {
-          legend: { position: "bottom", labels: { color: "#cbd5e1", boxWidth: 12 } },
+          legend: { position: "bottom", labels: { color: "#16313f", boxWidth: 12 } },
           tooltip: {
             callbacks: {
               label: (c) => `${c.dataset.label}: ${fmt(c.parsed.y)}`,
@@ -426,18 +527,18 @@
             stacked: true,
             ticks: {
               color: (ctx2) =>
-                ctx2.tick && ctx2.tick.label === state.selectedBucket ? "#f8fafc" : "#94a3b8",
+                ctx2.tick && ctx2.tick.label === state.selectedBucket ? "#16313f" : "#66747d",
               font: (ctx2) =>
                 ctx2.tick && ctx2.tick.label === state.selectedBucket
                   ? { weight: "700" }
                   : { weight: "400" },
             },
-            grid: { color: "rgba(148,163,184,0.08)" },
+            grid: { color: "rgba(22,49,63,0.08)" },
           },
           y: {
             stacked: true,
-            ticks: { color: "#94a3b8", callback: (v) => fmt(v) },
-            grid: { color: "rgba(148,163,184,0.08)" },
+            ticks: { color: "#66747d", callback: (v) => fmt(v) },
+            grid: { color: "rgba(22,49,63,0.08)" },
             beginAtZero: true,
           },
         },
@@ -526,8 +627,11 @@
   // ---------- bootstrap ----------
   document.addEventListener("DOMContentLoaded", async () => {
     initForm();
+    initTabs();
+    initSheet();
+    initEyeToggle();
     initPeriodToggle();
-    setReceiptHeaderDate();
+    initPagination();
     registerSW();
     try {
       await refreshAll();
